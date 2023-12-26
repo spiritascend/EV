@@ -9,6 +9,10 @@ This project was more for educational purposes only. This is not to be used mali
 Thank you samuel (@samuels1v on twitter) for assisting me in decompiling the function (It made this a lot quicker).
 */
 
+/*
+	To make the key "useable" replace all the -'s in the k value to +'s and all the _'s into /'s and then base64 decode into hex and thats the encryption key string
+*/
+
 
 void* DecipherKey(__int64 a1, int a2, int a3) {
 

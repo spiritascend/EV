@@ -1,7 +1,6 @@
 #pragma once
 
-#include <boost/archive/iterators/transform_width.hpp>
-#include <boost/archive/iterators/binary_from_base64.hpp>
+
 #include <algorithm> 
 
 template<class T>

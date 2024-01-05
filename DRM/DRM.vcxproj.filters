@@ -26,17 +26,26 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="lib\aes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="lib\aes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FNF\utils.h">
+    <ClInclude Include="FNF\utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="lib\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\base64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FNF\AES_Custom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

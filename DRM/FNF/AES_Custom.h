@@ -1,10 +1,8 @@
 #pragma once
 
-
-
 #include <emmintrin.h>
 #include <wmmintrin.h>
-#include <cstdint>
+
 
 
 #define AES256_ROUND_COUNT 14

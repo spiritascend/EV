@@ -132,7 +132,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DRM.cpp" />
-    <ClCompile Include="FNF\containers.h" />
     <ClCompile Include="lib\aes.c" />
   </ItemGroup>
   <ItemGroup>
@@ -140,8 +139,6 @@
     <ClInclude Include="FNF\utility.h" />
     <ClInclude Include="lib\aes.h" />
     <ClInclude Include="lib\aes.hpp" />
-    <ClInclude Include="lib\base64.h" />
-    <ClInclude Include="lib\json.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

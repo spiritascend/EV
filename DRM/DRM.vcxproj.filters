@@ -21,9 +21,6 @@
     <ClCompile Include="lib\aes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FNF\containers.h">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lib\aes.h">
@@ -33,12 +30,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FNF\utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\json.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\base64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FNF\AES_Custom.h">

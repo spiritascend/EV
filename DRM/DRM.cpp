@@ -1,11 +1,8 @@
-#include "FNF/containers.h"
+
 #include "lib/aes.hpp"
 #include "FNF/utility.h"
 #include <openssl/md5.h>
 #include "FNF/AES_Custom.h"
-
-
-
 
 
 /*
@@ -13,77 +10,55 @@ This project was more for educational purposes only. This is not to be used mali
 Thank you samuel (@samuels1v on twitter) for assisting me in decompiling the function (It made this a lot quicker).
 */
 
-
-
 /*
 	To make the key "useable" replace all the -'s in the k value to +'s and all the _'s into /'s and then base64 decode into hex and thats the encryption key string
 */
 
 
-void* DecipherKey(__int64 a1, int a2, int a3) {
+std::string DecryptEnvelope(const std::string& EVString, const std::string& Bearer) {
+	auto Envelope = decodeBase64(EVString);
+	if (Envelope.empty()) {
+		throw std::runtime_error("Failed to decode envelope");
+	}
 
-	auto v3 = *(uint64_t*)(a1 + 8);
-	auto v5 = (int)a3;
-	auto v6 = a2;
-	*(uint64_t*)(a1 + 8) = v3 + a3;
-	if (a3 > *(__int64*)(a1 + 0xC) - v3)
-		*(uint64_t*)(a1 + 8) = (uint64_t)_aligned_realloc(&v3, 8, 1);
+	if (Envelope[0] != 1) {
+		throw std::runtime_error("Envelope header is invalid");
+	}
 
+	int fourthbyteofEnv = Envelope[3];
+	int fifthbyteofEnv = Envelope[4];
 
-	auto result = memmove((void*)(*(__int64*)a1 + v6 + v5), (const void*)(*(__int64*)a1 + v6), (unsigned int)(v3 - v6));
-	return result;
-}
+	Envelope.erase(Envelope.begin(), Envelope.begin() + 5);
 
+	if (static_cast<int>(Bearer.length()) >= fourthbyteofEnv) {
+		auto subkey = std::vector<unsigned char>(Bearer.end() - fourthbyteofEnv, Bearer.end());
 
-std::string DecryptEnvelope(std::string EvString, std::string Bearer) {
-	std::vector<unsigned char> Envelope = decodeBase64(EvString);
+		if (subkey.size() == static_cast<size_t>(fourthbyteofEnv)) {
+			auto finalkey = std::vector<unsigned char>(Envelope.end() - (0x10 - fourthbyteofEnv), Envelope.end());
+			finalkey.insert(finalkey.end(), subkey.begin(), subkey.end());
 
-	if (Envelope[0] == 1) {
-		auto fourthbyteofEnv = Envelope[3];
-		auto fifthbyteofEnv = Envelope[4];
+			size_t startIndex = fourthbyteofEnv + Envelope.size() - 0x10;
+			size_t endIndex = startIndex + (0x10 - fourthbyteofEnv);
 
-		Envelope.erase(Envelope.begin(), Envelope.begin() + 5);
+			Envelope.erase(Envelope.begin() + startIndex, Envelope.begin() + endIndex);
 
-		auto EnvelopeSizeAfter5ByteRemoval = Envelope.size();
+			if ((Envelope.size() - fifthbyteofEnv) % AES_BLOCKLEN == 0) {
+				std::vector<unsigned char> decryptedText(Envelope.size());
+				std::vector<unsigned char> IV(AES_BLOCKLEN, 0);
 
-		if (Bearer.size() >= fourthbyteofEnv) {
-			auto subkey = Bearer.substr(Bearer.length() - fourthbyteofEnv);
+				struct AES_ctx ctx;
+				AES_init_ctx_iv(&ctx, finalkey.data(), IV.data());
+				AES_CBC_decrypt_buffer(&ctx, Envelope.data() + fifthbyteofEnv, Envelope.size() - fifthbyteofEnv);
 
-			if (subkey.size() == fourthbyteofEnv) {
-				auto TrailBytes = (char*)Envelope.data() + (int)Envelope.size() - (0x10 - fourthbyteofEnv);
-
-				auto Key = Conv_StringToCharArray(subkey);
-				DecipherKey((__int64) & Key, 0, 0x10 - fourthbyteofEnv);
-
-
-				if (0x10 != (uint64_t)fourthbyteofEnv)
-					memmove(Key.Data, TrailBytes, (0x10 - fourthbyteofEnv));
-
-				Envelope.erase(Envelope.begin() + (fourthbyteofEnv + EnvelopeSizeAfter5ByteRemoval - 0x10), Envelope.begin() + ((fourthbyteofEnv + EnvelopeSizeAfter5ByteRemoval - 0x10) + (0x10 - fourthbyteofEnv)));
-
-
-
-				if (!(((int)Envelope.size() - (int)fifthbyteofEnv) % 16)) {
-					struct AES_ctx ctx;
-
-					uint8_t IV[16] = { 0 };
-					uint8_t* encryptedintarray = reinterpret_cast<uint8_t*>(Envelope.data() + fifthbyteofEnv);
-
-
-					AES_init_ctx_iv(&ctx, (const uint8_t*)Key.Data, IV);
-					AES_CBC_decrypt_buffer(&ctx, encryptedintarray, Envelope.size() - fifthbyteofEnv);
-
-
-					std::string result = ExtractObjectFromBuff(std::string((const char*)encryptedintarray));
-
-
-
-					return result;
-				}
-
+				return ParseJsonFromDecryptedBlob(std::string(Envelope.begin() + fifthbyteofEnv, Envelope.end()));
 			}
 		}
+		else {
+			throw std::runtime_error("Invalid bearer subkey length");
+		}
 	}
+
+	return "";
 }
 
 struct Envelope
@@ -96,6 +71,7 @@ struct Envelope
 
 	uint8_t Buffer[256];
 };
+
 
 std::string DecryptEV_BLURL(std::string EV)
 {
@@ -131,6 +107,8 @@ std::string DecryptEV_BLURL(std::string EV)
 		if (!file.read(Buffer.data(), 4))  break;
 		if (!file.get(FirstByteOfHash)) break;
 
+
+
 		MD5_CTX ctx;
 		MD5_Init(&ctx);
 		MD5_Update(&ctx, Buffer.data(), 4);
@@ -141,9 +119,11 @@ std::string DecryptEV_BLURL(std::string EV)
 
 		if (hash[0] == (unsigned char)FirstByteOfHash)
 		{
+			printf("%02x\n", BufferDecryptionKey.data()[0]);
+
 			file.seekg(0xF, std::ios::cur);
 			if (!file.read((char*)BufferDecryptionKey.data(), 32)) break;
-			
+
 			AesDecryptX86(BufferDecryptionKey.data(), EncryptedKey, 16);
 
 			file.close();
@@ -158,7 +138,7 @@ std::string DecryptEV_BLURL(std::string EV)
 
 
 
-#define USE_BLURL_DECRYTION
+//#define USE_BLURL_DECRYTION
 
 
 int main()
@@ -174,7 +154,7 @@ int main()
 
 
 
-/*Make sure that the keys.bin file (Located in the dependencies folder) is in the same directory as the executable when dealing with blurl decryption*/
+	/*Make sure that the keys.bin file (Located in the dependencies folder) is in the same directory as the executable when dealing with blurl decryption*/
 #ifdef USE_BLURL_DECRYTION
 	std::string key = DecryptEV_BLURL("INSERT_EV_HERE");
 	std::cout << key << std::endl;

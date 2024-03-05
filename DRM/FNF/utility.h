@@ -5,31 +5,18 @@
 #include <iomanip>
 #include <sstream>
 #include <fstream>
-#include "..\lib\json.hpp"
-#include "..\lib\base64.h"
-
-TArray<char> Conv_StringToCharArray(std::string InString) {
-	TArray<char> Temp;
-	for (int i = 0; i < InString.size(); i++)
-		Temp.Add(InString[i]);
-	return Temp;
-}
 
 
-std::string ExtractObjectFromBuff(std::string InBuff) {
-	size_t startPos = InBuff.find("{");
-	if (startPos != std::string::npos) {
-		size_t endPos = InBuff.rfind("}");
-		if (endPos != std::string::npos) {
-			return InBuff.substr(startPos, endPos - startPos + 1);
-		}
-		else {
-			return "";
-		}
-	}
-	else {
-		return "";
-	}
+
+std::string ParseJsonFromDecryptedBlob(const std::string& blob) {
+    std::size_t startIdx = blob.find("{");
+    std::size_t endIdx = blob.rfind("}");
+
+    if (startIdx == std::string::npos || endIdx == std::string::npos || endIdx < startIdx) {
+        return blob;
+    }
+
+    return blob.substr(startIdx, endIdx - startIdx + 1);
 }
 
 

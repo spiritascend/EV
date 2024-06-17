@@ -5,7 +5,47 @@
 #include <iomanip>
 #include <sstream>
 #include <fstream>
+#include <openssl/aes.h>
+#include <openssl/evp.h>
 
+
+static void AesDecrypt(const void* Key, void* Contents, uint64_t NumBytes)
+{
+    if (NumBytes % AES_BLOCK_SIZE != 0) {
+        return;
+    }
+
+    const uint8_t* KeyBytes = static_cast<const uint8_t*>(Key);
+    uint8_t* DataBytes = static_cast<uint8_t*>(Contents);
+
+    AES_KEY decryptKey;
+    AES_set_decrypt_key(KeyBytes, 256, &decryptKey);
+
+    for (uint64_t i = 0; i < NumBytes; i += AES_BLOCK_SIZE) {
+        AES_decrypt(DataBytes + i, DataBytes + i, &decryptKey);
+    }
+}
+
+void AES_CBC_decrypt_buffer(const uint8_t* key, const uint8_t* iv, uint8_t* buffer, uint32_t length) {
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return;
+
+    if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv))
+        return;
+
+    int len;
+    if (1 != EVP_DecryptUpdate(ctx, buffer, &len, buffer, length))
+        return;
+
+    int plaintext_len = len;
+
+    if (1 != EVP_DecryptFinal_ex(ctx, buffer + len, &len))
+        return;
+
+    plaintext_len += len;
+
+    EVP_CIPHER_CTX_free(ctx);
+}
 
 
 std::string ParseJsonFromDecryptedBlob(const std::string& blob) {
